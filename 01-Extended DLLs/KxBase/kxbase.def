@@ -139,6 +139,7 @@ EXPORTS
 
 	;; time.c
 	GetSystemTimePreciseAsFileTime
+	QueryInterruptTimePrecise
 	QueryUnbiasedInterruptTimePrecise
 	GetDynamicTimeZoneInformationEffectiveYears
 	EnumDynamicTimeZoneInformation

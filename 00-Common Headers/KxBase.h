@@ -742,6 +742,12 @@ KXBASEAPI HRESULT WINAPI CopyFile2(
 KXBASEAPI VOID WINAPI GetSystemTimePreciseAsFileTime(
 	OUT	PFILETIME	SystemTimeAsFileTime);
 
+KXBASEAPI VOID WINAPI QueryInterruptTimePrecise(
+	OUT	PULONGLONG	InterruptTimePrecise);
+
+KXBASEAPI VOID WINAPI QueryUnbiasedInterruptTimePrecise(
+	OUT	PULONGLONG	UnbiasedInterruptTimePrecise);
+
 //
 // synch.c
 //

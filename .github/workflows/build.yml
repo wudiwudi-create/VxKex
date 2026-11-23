@@ -170,6 +170,42 @@ jobs:
 
           echo Win32 ${{ matrix.configuration }} build successful
 
+      - name: Prepare x64 interrupt-time package
+        if: matrix.configuration == 'Release'
+        shell: powershell
+        run: |
+          $dlls = @(Get-ChildItem -Path . -Filter kxbase.dll -File -Recurse | Where-Object {
+            $_.FullName -match '[\\/]x64[\\/]Release[\\/]kxbase\.dll$'
+          })
+          if ($dlls.Count -ne 1) {
+            throw "Expected one x64 Release kxbase.dll, found $($dlls.Count)"
+          }
+          New-Item -ItemType Directory -Force -Path interrupt-time-package | Out-Null
+          Copy-Item $dlls[0].FullName interrupt-time-package/kxbase.dll
+          Copy-Item 01-Tests/interrupttime/README.txt interrupt-time-package/README.txt
+
+      - name: Verify exports and build x64 test
+        if: matrix.configuration == 'Release'
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
+          dumpbin /exports interrupt-time-package\kxbase.dll > interrupt-time-package\exports.txt
+          if errorlevel 1 exit /b 1
+          findstr /r /c:" QueryInterruptTimePrecise$" interrupt-time-package\exports.txt >nul
+          if errorlevel 1 exit /b 1
+          findstr /r /c:" QueryUnbiasedInterruptTimePrecise$" interrupt-time-package\exports.txt >nul
+          if errorlevel 1 exit /b 1
+          cl /nologo /W4 /TC "01-Tests\interrupttime\test.c" /Feinterrupt-time-package\interrupttime-test.exe
+          if errorlevel 1 exit /b 1
+
+      - name: Upload x64 interrupt-time package
+        if: matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v7
+        with:
+          name: VxKex-interrupt-time-x64
+          path: interrupt-time-package/*
+          if-no-files-found: error
+
       # Rename outputs to include the tag (release) or short commit hash (non-release),
       # e.g. KexSetup_Release_v1.2.3.exe / KexSetup_Release_a1b2c3d.exe
       - name: Rename build outputs

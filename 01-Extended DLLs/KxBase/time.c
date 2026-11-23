@@ -49,10 +49,27 @@ KXBASEAPI VOID WINAPI GetSystemTimePreciseAsFileTime(
 	*(PLONGLONG) SystemTimeAsFileTime = RtlGetSystemTimePrecise();
 }
 
+// Windows 7 exposes the biased interrupt time in SharedUserData. This is
+// updated on clock ticks, so it does not have the precision of the Win10 API.
+KXBASEAPI VOID WINAPI QueryInterruptTimePrecise(
+	OUT	PULONGLONG	InterruptTimePrecise)
+{
+	LARGE_INTEGER InterruptTime;
+
+	do {
+		InterruptTime.HighPart = SharedUserData->InterruptTime.High1Time;
+		InterruptTime.LowPart = SharedUserData->InterruptTime.LowPart;
+	} while (InterruptTime.HighPart != SharedUserData->InterruptTime.High2Time);
+
+	*InterruptTimePrecise = InterruptTime.QuadPart;
+}
+
 KXBASEAPI VOID WINAPI QueryUnbiasedInterruptTimePrecise(
 	OUT	PULONGLONG	UnbiasedInterruptTimePrecise)
 {
-	QueryUnbiasedInterruptTime(UnbiasedInterruptTimePrecise);
+	if (!QueryUnbiasedInterruptTime(UnbiasedInterruptTimePrecise)) {
+		*UnbiasedInterruptTimePrecise = 0;
+	}
 }
 
 // Required for some Unity games, I think the ones that use il2cpp.
